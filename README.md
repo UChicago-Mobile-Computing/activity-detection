@@ -10,13 +10,21 @@ Starter code and train/test dataset for Lab 1 in [CMSC 23400: Mobile Computing](
 
 **Optional GitHub Setup**
 
-If you would like to collaborate with your team using [GitHub](https://github.com/), follow these steps to upload this code to your own repository:
+If you would like to collaborate with your team using [GitHub](https://github.com/), follow these steps to upload the starter code to your own repository:
 
-1. Click the "+" icon at the top on GitHub, then select **Create new repository**.
-2. Name your repository, and mark it as **private**. **Note that work done in public repositories of this lab may not earn credit.**
-3. Click **create repository**.
-4. Navigate to this repository on your computer through the command line, then follow the instructions for "pushing an existing repository from the command line."
+1. Ensure you've downloaded this repository through the `git clone` method above, *not* by downloading the ZIP.
+2. Click the "+" icon at the top on GitHub, then select **Create new repository**.
+3. Name your repository, and mark it as **private**. **Note that work done in public repositories of this lab may not earn credit.**
+4. Click **create repository**.
+5. Navigate to this repository on your computer through the command line, then follow the instructions for "pushing an existing repository from the command line." Use your GitHub username in place of `$USERNAME` and your repository name in place of `$REPO_NAME` below:
+
+```
+git remote rename origin upstream
+git remote add origin git@github.com:$USERNAME/$REPO_NAME.git
+git branch -M main
+git push -u origin main
+```
 
 ## Assignment & submission requirements
 
-Please refer to [this document](https://docs.google.com/document/d/1HKSX5XHLAX8O8e_MBuM2guvQD2PaT-Z-W65o4g5yApo/edit#heading=h.evagmdm6f517) for the latest assignment instructions. Submissions are **due via Gradescope by Thursday, February 3 at 11:59pm CT**.
+Please refer to [this document](https://docs.google.com/document/d/1HKSX5XHLAX8O8e_MBuM2guvQD2PaT-Z-W65o4g5yApo/edit) for the latest assignment instructions. Submissions are **due via Gradescope by Thursday, February 3 at 11:59pm CT**.
