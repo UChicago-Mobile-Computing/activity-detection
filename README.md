@@ -1,12 +1,13 @@
 # Lab 1: Activity Detection
 
-Starter code and train/test dataset for Lab 1 in [CMSC 23400: Mobile Computing](https://people.cs.uchicago.edu/~htzheng/teach/cs23400/) (University of Chicago, 2022)
+Starter code for Lab 1 in [CMSC 23400: Mobile Computing](https://people.cs.uchicago.edu/~htzheng/teach/cs23400/) (University of Chicago, 2022)
 
 ## Setup
 
 1. Download this repository onto your computer by going to `Code > Download ZIP` on the top-right of the GitHub page or by running `git clone git@github.com:UChicago-Mobile-Computing/activity-detection.git` with [git installed](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
 2. Install Python 3.6 or above. This may be preinstalled on your system (run `python3` on the command line to check), or [download the latest version](https://www.python.org/downloads/).
 3. Install required packages: `pip3 install -r requirements.txt`
+4. Download the [train/test dataset](https://drive.google.com/file/d/14SCF6hTgnQTu5ZHddTghG3lewVoCiyM0/view?usp=sharing) and unzip it such that `data/train` and `data/test_unlabeled` are subdirectories of this repository.
 
 **Optional GitHub Setup**
 
