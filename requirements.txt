@@ -1,2 +1,7 @@
 numpy
 pandas
+seaborn
+torch
+scipy
+matplotlib
+scikit_learn
