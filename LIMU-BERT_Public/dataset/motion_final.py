@@ -10,6 +10,9 @@ import os
 import numpy as np
 import pandas as pd
 from glob import glob
+import argparse
+
+
 
 
 ACTIVITY_NAMES = ["dws", "ups", "sit", "std", "wlk", "jog"]
@@ -103,7 +106,18 @@ def preprocess(path, path_save, version, target_window=50, seq_len=20):
     return data, label
 
 
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+        '--data_folder',
+        type=str,
+        required=True,
+       )
+   
+args = parser.parse_args()
+
 path_save = r'motion'
 version = r'20_120'
-DATASET_PATH = r'/home/zsarwar/cs/datasets/ass_f/data/test_unlabeled'
-data, label = preprocess(DATASET_PATH, path_save, version, seq_len=120)
+
+data, label = preprocess(args.data_folder, path_save, version, seq_len=120)
