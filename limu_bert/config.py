@@ -9,18 +9,21 @@
 import json
 from typing import NamedTuple
 import os
+
 # from bunch import bunchify
 
 
 class PretrainModelConfig(NamedTuple):
     "Configuration for BERT model"
     hidden: int = 0  # Dimension of Hidden Layer in Transformer Encoder
-    hidden_ff: int = 0  # Dimension of Intermediate Layers in Positionwise Feedforward Net
+    hidden_ff: int = (
+        0  # Dimension of Intermediate Layers in Positionwise Feedforward Net
+    )
     feature_num: int = 0  # Factorized embedding parameterization
 
     n_layers: int = 0  # Numher of Hidden Layers
     n_heads: int = 0  # Numher of Heads in Multi-Headed Attention Layers
-    #activ_fn: str = "gelu" # Non-linear Activation Function Type in Hidden Layers
+    # activ_fn: str = "gelu" # Non-linear Activation Function Type in Hidden Layers
     seq_len: int = 0  # Maximum Length for Positional Embeddings
     emb_norm: bool = True
 
@@ -60,6 +63,7 @@ class ClassifierModelConfig(NamedTuple):
 
 class TrainConfig(NamedTuple):
     """ Hyperparameters for training """
+
     seed: int = 0  # random seed
     batch_size: int = 0
     lr: int = 0  # learning rate
@@ -72,14 +76,14 @@ class TrainConfig(NamedTuple):
     lambda1: float = 0
     lambda2: float = 0
 
-
     @classmethod
-    def from_json(cls, file): # load config from json file
+    def from_json(cls, file):  # load config from json file
         return cls(**json.load(open(file, "r")))
 
 
 class MaskConfig(NamedTuple):
     """ Hyperparameters for training """
+
     mask_ratio: float = 0  # masking probability
     mask_alpha: int = 0  # How many tokens to form a group.
     max_gram: int = 0  # number of max n-gram to masking
@@ -87,12 +91,13 @@ class MaskConfig(NamedTuple):
     replace_prob: float = 0.0
 
     @classmethod
-    def from_json(cls, file): # load config from json file
+    def from_json(cls, file):  # load config from json file
         return cls(**json.load(open(file, "r")))
 
 
 class DatasetConfig(NamedTuple):
     """ Hyperparameters for training """
+
     sr: int = 0  # sampling rate
     # dataset = Narray with shape (size, seq_len, dimension)
     size: int = 0  # data sample number
@@ -118,15 +123,19 @@ class DatasetConfig(NamedTuple):
         return cls(**js)
 
 
-def create_io_config(args, dataset_name, version, pretrain_model=None, target='pretrain'):
-    data_path = os.path.join('dataset', dataset_name, 'data_' + version + '.npy')
-    label_path = os.path.join('dataset', dataset_name, 'label_' + version + '.npy')
-    args.data_path = data_path
-    args.label_path = label_path
+def create_io_config(
+    args, dataset_name, version, pretrain_model=None, target="pretrain"
+):
+    data_path = os.path.join("dataset", dataset_name, "data_" + version + ".npy")
+    label_path = os.path.join("dataset", dataset_name, "label_" + version + ".npy")
+    args.data_path = f"{os.getcwd()}/limu_bert/{data_path}"
+    args.label_path = f"{os.getcwd()}/limu_bert/{label_path}"
 
-    save_path = os.path.join('saved', target + "_" + dataset_name + "_" + version)  # + "_temp"
+    save_path = os.path.join(
+        "saved", target + "_" + dataset_name + "_" + version
+    )  # + "_temp"
     if not os.path.exists(save_path):
-        os.mkdir(save_path)
+        os.makedirs(save_path, exist_ok=True)
     args.save_path = os.path.join(save_path, args.save_model)
 
     # log_path = os.path.join('log', target + "_" + dataset_name + "_" + version)  # + "_temp"
@@ -135,8 +144,12 @@ def create_io_config(args, dataset_name, version, pretrain_model=None, target='p
     # args.log_dir = log_path
 
     if pretrain_model is not None:
-        if target.count('_') > 2: # bert_classifier
-            model_path = os.path.join('saved', 'pretrain_' + target.split('_')[2] + "_" + dataset_name + "_" + version, pretrain_model)
+        if target.count("_") > 2:  # bert_classifier
+            model_path = os.path.join(
+                "saved",
+                "pretrain_" + target.split("_")[2] + "_" + dataset_name + "_" + version,
+                pretrain_model,
+            )
         else:
             model_path = os.path.join(save_path, pretrain_model)
         args.pretrain_model = model_path
@@ -145,9 +158,14 @@ def create_io_config(args, dataset_name, version, pretrain_model=None, target='p
     return args
 
 
-def load_model_config(target, prefix, version
-                      , path_bert='config/limu_bert.json', path_classifier='config/classifier.json'):
-    if "bert" not in target: # pretrain or pure classifier
+def load_model_config(
+    target,
+    prefix,
+    version,
+    path_bert="config/limu_bert.json",
+    path_classifier="config/classifier.json",
+):
+    if "bert" not in target:  # pretrain or pure classifier
         if "pretrain" in target:
             model_config_all = json.load(open(path_bert, "r"))
         else:
@@ -160,22 +178,28 @@ def load_model_config(target, prefix, version
                 return ClassifierModelConfig.from_json(model_config_all[name])
         else:
             return None
-    else: # pretrain + classifier for fine-tune
+    else:  # pretrain + classifier for fine-tune
         model_config_bert = json.load(open(path_bert, "r"))
         model_config_classifier = json.load(open(path_classifier, "r"))
-        prefixes = prefix.split('_')
-        versions = version.split('_')
+        prefixes = prefix.split("_")
+        versions = version.split("_")
         bert_name = prefixes[0] + "_" + versions[0]
         classifier_name = prefixes[1] + "_" + versions[1]
-        if bert_name in model_config_bert and classifier_name in model_config_classifier:
-            return [PretrainModelConfig.from_json(model_config_bert[bert_name])
-                , ClassifierModelConfig.from_json(model_config_classifier[classifier_name])]
+        if (
+            bert_name in model_config_bert
+            and classifier_name in model_config_classifier
+        ):
+            return [
+                PretrainModelConfig.from_json(model_config_bert[bert_name]),
+                ClassifierModelConfig.from_json(
+                    model_config_classifier[classifier_name]
+                ),
+            ]
         else:
             return None
 
 
-def load_dataset_stats(dataset, version):
-    path = 'dataset/data_config.json'
+def load_dataset_stats(dataset, version, path):
     dataset_config_all = json.load(open(path, "r"))
     name = dataset + "_" + version
     if name in dataset_config_all:
@@ -194,4 +218,3 @@ def load_dataset_label_names(dataset_config, label_index):
             else:
                 return None, label_num
     return None, -1
-

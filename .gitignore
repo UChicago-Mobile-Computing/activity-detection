@@ -1,5 +1,9 @@
 # Data folder
 data/
+limu_bert/dataset/motion/
+limu_bert/embed/
+
+saved/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -11,7 +11,13 @@ import argparse
 from scipy.special import factorial
 from torch.utils.data import Dataset
 
-from config import create_io_config, load_dataset_stats, TrainConfig, MaskConfig, load_model_config
+from config import (
+    create_io_config,
+    load_dataset_stats,
+    TrainConfig,
+    MaskConfig,
+    load_model_config,
+)
 
 
 """ Utils Functions """
@@ -21,6 +27,7 @@ import random
 import numpy as np
 import torch
 import sys
+import os
 
 
 def set_seeds(seed):
@@ -79,16 +86,16 @@ def span_mask(seq_len, max_gram=3, p=0.2, goal_num_predict=15):
     return list(mask_pos)
 
 
-def merge_dataset(data, label, mode='all'):
+def merge_dataset(data, label, mode="all"):
     index = np.zeros(data.shape[0], dtype=bool)
     label_new = []
     for i in range(label.shape[0]):
-        if mode == 'all':
+        if mode == "all":
             temp_label = np.unique(label[i])
             if temp_label.size == 1:
                 index[i] = True
                 label_new.append(label[i, 0])
-        elif mode == 'any':
+        elif mode == "any":
             index[i] = True
             if np.any(label[i] > 0):
                 temp_label = np.unique(label[i])
@@ -109,7 +116,9 @@ def reshape_data(data, merge):
     if merge == 0:
         return data.reshape(data.shape[0] * data.shape[1], data.shape[2])
     else:
-        return data.reshape(data.shape[0] * data.shape[1] // merge, merge, data.shape[2])
+        return data.reshape(
+            data.shape[0] * data.shape[1] // merge, merge, data.shape[2]
+        )
 
 
 def reshape_label(label, merge):
@@ -127,42 +136,78 @@ def shuffle_data_label(data, label):
 
 def prepare_pretrain_dataset(data, labels, training_rate, seed=None):
     set_seeds(seed)
-    data_train, label_train, data_vali, label_vali, data_test, label_test = partition_and_reshape(data, labels, label_index=0
-                                                                                                  , training_rate=training_rate, vali_rate=0.1
-                                                                                                  , change_shape=False)
+    (
+        data_train,
+        label_train,
+        data_vali,
+        label_vali,
+        data_test,
+        label_test,
+    ) = partition_and_reshape(
+        data,
+        labels,
+        label_index=0,
+        training_rate=training_rate,
+        vali_rate=0.1,
+        change_shape=False,
+    )
     return data_train, label_train, data_vali, label_vali
 
 
-def prepare_classifier_dataset(data, labels, label_index=0, training_rate=0.8, label_rate=1.0, change_shape=True
-                               , merge=0, merge_mode='all', seed=None, balance=False):
+def prepare_classifier_dataset(
+    data,
+    labels,
+    label_index=0,
+    training_rate=0.8,
+    label_rate=1.0,
+    change_shape=True,
+    merge=0,
+    merge_mode="all",
+    seed=None,
+    balance=False,
+):
 
     set_seeds(seed)
     print(labels.shape)
-    data_test, label_test \
-        = partition_and_reshape(data, labels, label_index=label_index, training_rate=training_rate, vali_rate=0.1
-                                , change_shape=change_shape, merge=merge, merge_mode=merge_mode)
+    data_test, label_test = partition_and_reshape(
+        data,
+        labels,
+        label_index=label_index,
+        training_rate=training_rate,
+        vali_rate=0.1,
+        change_shape=change_shape,
+        merge=merge,
+        merge_mode=merge_mode,
+    )
     set_seeds(seed)
 
     return data_test, label_test
 
 
-def partition_and_reshape(data, labels, label_index=0, training_rate=0.8, vali_rate=0.1, change_shape=True
-                          , merge=0, merge_mode='all', shuffle=True):
-    
-    
-    
+def partition_and_reshape(
+    data,
+    labels,
+    label_index=0,
+    training_rate=0.8,
+    vali_rate=0.1,
+    change_shape=True,
+    merge=0,
+    merge_mode="all",
+    shuffle=True,
+):
+
     data_test = data
     t = np.min(labels[:, :, label_index])
-    
+
     label_test = labels[:, ..., label_index] - t
     if change_shape:
         data_test = reshape_data(data_test, merge)
         label_test = reshape_label(label_test, merge)
     if change_shape and merge != 0:
-        
+
         data_test, label_test = merge_dataset(data_test, label_test, mode=merge_mode)
-        
-    print('Test Size: %d' % (label_test.shape[0]))
+
+    print("Test Size: %d" % (label_test.shape[0]))
     return data_test, label_test
 
 
@@ -181,8 +226,14 @@ def prepare_simple_dataset(data, labels, training_rate=0.2):
     label_num = []
     for i in range(labels_unique.size):
         label_num.append(np.sum(labels == labels_unique[i]))
-    print('Label Size: %d, Unlabel Size: %d. Label Distribution: %s'
-          % (label_train.shape[0], label_test.shape[0], ', '.join(str(e) for e in label_num)))
+    print(
+        "Label Size: %d, Unlabel Size: %d. Label Distribution: %s"
+        % (
+            label_train.shape[0],
+            label_test.shape[0],
+            ", ".join(str(e) for e in label_num),
+        )
+    )
     return data_train, label_train, data_test, label_test
 
 
@@ -206,8 +257,14 @@ def prepare_simple_dataset_balance(data, labels, training_rate=0.8):
     data_test = data[~index, ...]
     label_train = labels[index, ...] - t
     label_test = labels[~index, ...] - t
-    print('Balance Label Size: %d, Unlabel Size: %d; Real Label Rate: %0.3f' % (label_train.shape[0], label_test.shape[0]
-                                                               , label_train.shape[0] * 1.0 / labels.size))
+    print(
+        "Balance Label Size: %d, Unlabel Size: %d; Real Label Rate: %0.3f"
+        % (
+            label_train.shape[0],
+            label_test.shape[0],
+            label_train.shape[0] * 1.0 / labels.size,
+        )
+    )
     return data_train, label_train, data_test, label_test
 
 
@@ -227,8 +284,9 @@ def match_labels(labels, labels_targets):
     return index
 
 
-class Pipeline():
+class Pipeline:
     """ Pre-process Pipeline Class : callable """
+
     def __init__(self):
         super().__init__()
 
@@ -238,6 +296,7 @@ class Pipeline():
 
 class Preprocess4Normalization(Pipeline):
     """ Pre-processing steps for pretraining transformer """
+
     def __init__(self, feature_len, norm_acc=True, norm_mag=True, gamma=1.0):
         super().__init__()
         self.feature_len = feature_len
@@ -248,7 +307,7 @@ class Preprocess4Normalization(Pipeline):
         self.gamma = gamma
 
     def __call__(self, instance):
-        instance_new = instance.copy()[:, :self.feature_len]
+        instance_new = instance.copy()[:, : self.feature_len]
         if instance_new.shape[1] >= 6 and self.norm_acc:
             instance_new[:, :3] = instance_new[:, :3] / self.acc_norm
         if instance_new.shape[1] == 9 and self.norm_mag:
@@ -260,6 +319,7 @@ class Preprocess4Normalization(Pipeline):
 
 class Preprocess4Mask:
     """ Pre-processing steps for pretraining transformer """
+
     def __init__(self, mask_cfg):
         self.mask_ratio = mask_cfg.mask_ratio  # masking probability
         self.mask_alpha = mask_cfg.mask_alpha
@@ -291,7 +351,7 @@ class Preprocess4Mask:
 
         # For masked Language Models
         # mask_pos = bert_mask(shape[0], n_pred)
-        mask_pos = span_mask(shape[0], self.max_gram,  goal_num_predict=n_pred)
+        mask_pos = span_mask(shape[0], self.max_gram, goal_num_predict=n_pred)
 
         instance_mask = instance.copy()
 
@@ -313,6 +373,7 @@ class Preprocess4Mask:
 
 class IMUDataset(Dataset):
     """ Load sentence pair (sequential or random order) from corpus """
+
     def __init__(self, data, labels, pipeline=[]):
         super().__init__()
         self.pipeline = pipeline
@@ -323,7 +384,10 @@ class IMUDataset(Dataset):
         instance = self.data[index]
         for proc in self.pipeline:
             instance = proc(instance)
-        return torch.from_numpy(instance).float(), torch.from_numpy(np.array(self.labels[index])).long()
+        return (
+            torch.from_numpy(instance).float(),
+            torch.from_numpy(np.array(self.labels[index])).long(),
+        )
 
     def __len__(self):
         return len(self.data)
@@ -342,7 +406,10 @@ class FFTDataset(Dataset):
         for proc in self.pipeline:
             instance = proc(instance)
         seq = self.preprocess(instance)
-        return torch.from_numpy(seq), torch.from_numpy(np.array(self.labels[index])).long()
+        return (
+            torch.from_numpy(seq),
+            torch.from_numpy(np.array(self.labels[index])).long(),
+        )
 
     def __len__(self):
         return len(self.data)
@@ -356,6 +423,7 @@ class FFTDataset(Dataset):
 
 class LIBERTDataset4Pretrain(Dataset):
     """ Load sentence pair (sequential or random order) from corpus """
+
     def __init__(self, data, pipeline=[]):
         super().__init__()
         self.pipeline = pipeline
@@ -366,53 +434,113 @@ class LIBERTDataset4Pretrain(Dataset):
         for proc in self.pipeline:
             instance = proc(instance)
         mask_seq, masked_pos, seq = instance
-        return torch.from_numpy(mask_seq), torch.from_numpy(masked_pos).long(), torch.from_numpy(seq)
+        return (
+            torch.from_numpy(mask_seq),
+            torch.from_numpy(masked_pos).long(),
+            torch.from_numpy(seq),
+        )
 
     def __len__(self):
         return len(self.data)
 
 
 def handle_argv(target, config_train, prefix):
-    parser = argparse.ArgumentParser(description='PyTorch LIMU-BERT Model')
-    parser.add_argument('model_version', type=str, help='Model config')
-    parser.add_argument('dataset', type=str, help='Dataset name', choices=['hhar', 'motion', 'uci', 'shoaib'])
-    parser.add_argument('dataset_version',  type=str, help='Dataset version', choices=['10_100', '20_120'])
-    parser.add_argument('-g', '--gpu', type=str, default=None, help='Set specific GPU')
-    parser.add_argument('-f', '--model_file', type=str, default=None, help='Pretrain model file')
-    parser.add_argument('-t', '--train_cfg', type=str, default='./config/' + config_train, help='Training config json file path')
-    parser.add_argument('-a', '--mask_cfg', type=str, default='./config/mask.json',
-                        help='Mask strategy json file path')
-    parser.add_argument('-l', '--label_index', type=int, default=-1,
-                        help='Label Index')
-    parser.add_argument('-s', '--save_model', type=str, default='model',
-                        help='The saved model name')
+    parser = argparse.ArgumentParser(description="PyTorch LIMU-BERT Model")
+    parser.add_argument("model_version", type=str, help="Model config")
+    parser.add_argument(
+        "dataset",
+        type=str,
+        help="Dataset name",
+        choices=["hhar", "motion", "uci", "shoaib"],
+    )
+    parser.add_argument(
+        "dataset_version",
+        type=str,
+        help="Dataset version",
+        choices=["10_100", "20_120"],
+    )
+    parser.add_argument("-g", "--gpu", type=str, default=None, help="Set specific GPU")
+    parser.add_argument(
+        "-f", "--model_file", type=str, default=None, help="Pretrain model file"
+    )
+    parser.add_argument(
+        "-t",
+        "--train_cfg",
+        type=str,
+        default="./config/" + config_train,
+        help="Training config json file path",
+    )
+    parser.add_argument(
+        "-a",
+        "--mask_cfg",
+        type=str,
+        default="./config/mask.json",
+        help="Mask strategy json file path",
+    )
+    parser.add_argument(
+        "--output_predictions",
+        type=str,
+        default="predictions_limu_bert.txt",
+        help="output path of prediction file",
+    )
+    parser.add_argument("-l", "--label_index", type=int, default=-1, help="Label Index")
+    parser.add_argument(
+        "-s", "--save_model", type=str, default="model", help="The saved model name"
+    )
     try:
         args = parser.parse_args()
     except:
         parser.print_help()
         sys.exit(0)
-    model_cfg = load_model_config(target, prefix, args.model_version)
+    config_path = f"{os.getcwd()}/limu_bert/config/limu_bert.json"
+    classifier_path = f"{os.getcwd()}/limu_bert/config/classifier.json"
+    model_cfg = load_model_config(
+        target,
+        prefix,
+        args.model_version,
+        path_bert=config_path,
+        path_classifier=classifier_path,
+    )
     if model_cfg is None:
         print("Unable to find corresponding model config!")
         sys.exit()
     args.model_cfg = model_cfg
-    dataset_cfg = load_dataset_stats(args.dataset, args.dataset_version)
+    dataset_path = f"{os.getcwd()}/limu_bert/dataset/data_config.json"
+    dataset_cfg = load_dataset_stats(args.dataset, args.dataset_version, dataset_path)
     if dataset_cfg is None:
         print("Unable to find corresponding dataset config!")
         sys.exit()
     args.dataset_cfg = dataset_cfg
-    args = create_io_config(args, args.dataset, args.dataset_version, pretrain_model=args.model_file, target=target)
+    args = create_io_config(
+        args,
+        args.dataset,
+        args.dataset_version,
+        pretrain_model=args.model_file,
+        target=target,
+    )
     return args
 
 
-
 def handle_argv_simple():
-    parser = argparse.ArgumentParser(description='PyTorch LIMU-BERT Model')
-    parser.add_argument('model_file', type=str, default=None, help='Pretrain model file')
-    parser.add_argument('dataset', type=str, help='Dataset name', choices=['hhar', 'motion', 'uci', 'shoaib','merge'])
-    parser.add_argument('dataset_version',  type=str, help='Dataset version', choices=['10_100', '20_120'])
+    parser = argparse.ArgumentParser(description="PyTorch LIMU-BERT Model")
+    parser.add_argument(
+        "model_file", type=str, default=None, help="Pretrain model file"
+    )
+    parser.add_argument(
+        "dataset",
+        type=str,
+        help="Dataset name",
+        choices=["hhar", "motion", "uci", "shoaib", "merge"],
+    )
+    parser.add_argument(
+        "dataset_version",
+        type=str,
+        help="Dataset version",
+        choices=["10_100", "20_120"],
+    )
     args = parser.parse_args()
-    dataset_cfg = load_dataset_stats(args.dataset, args.dataset_version)
+    data_set_path = f"{os.getcwd()}/limu_bert/dataset/data_config.json"
+    dataset_cfg = load_dataset_stats(args.dataset, args.dataset_version, dataset_path)
     if dataset_cfg is None:
         print("Unable to find corresponding dataset config!")
         sys.exit()

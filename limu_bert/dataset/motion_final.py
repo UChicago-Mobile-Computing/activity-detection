@@ -1,4 +1,4 @@
- #!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # @Time    : 2021/01/07 15:01
 # @Author  : Huatao
@@ -11,8 +11,7 @@ import numpy as np
 import pandas as pd
 from glob import glob
 import argparse
-
-
+from tqdm import tqdm
 
 
 ACTIVITY_NAMES = ["dws", "ups", "sit", "std", "wlk", "jog"]
@@ -37,7 +36,7 @@ def down_sample(data, window_target):
     if window_sample.is_integer():
         window = int(window_sample)
         for i in range(0, len(data), window):
-            slice = data[i: i + window, :]
+            slice = data[i : i + window, :]
             result.append(np.mean(slice, 0))
     else:
         window = int(window_sample)
@@ -47,12 +46,12 @@ def down_sample(data, window_target):
             remainder += window_sample - window
             if remainder >= 1:
                 remainder -= 1
-                slice = data[i: i + window + 1, :]
+                slice = data[i : i + window + 1, :]
                 # print('i: %d, window: %d, start: %d, end: %d' % (i, window, start, end))
                 result.append(np.mean(slice, 0))
                 i += window + 1
             else:
-                slice = data[i: i + window, :]
+                slice = data[i : i + window, :]
                 result.append(np.mean(slice, 0))
                 # print('i: %d, window: %d, start: %d, end: %d' % (i, window +  1, start, end))
                 i += window
@@ -63,28 +62,31 @@ def load_sensor_data(path, seq_len, target_window, gyro=False):
     data = []
     label = []
     n = 0
-    
-    for file in (glob(path + "/*")):
+
+    for file in tqdm(sorted(glob(path + "/*"))):
         # Ignore labels
         label_act = 100
         # Ignore user data
         label_u = 100
-        sensor = np.loadtxt(file, skiprows=1, delimiter=' ')
+        sensor = np.loadtxt(file, skiprows=1, delimiter=" ")
         if not gyro:
             sensor_down = down_sample(sensor[:, 1:4], target_window)
         else:
             sensor_down = down_sample(sensor[:, 4:], target_window)
         if sensor_down.shape[0] > seq_len:
-            sensor_down = sensor_down[:sensor_down.shape[0] // seq_len * seq_len, :]
-            sensor_down = sensor_down.reshape(sensor_down.shape[0] // seq_len, seq_len, sensor_down.shape[1])
+            sensor_down = sensor_down[: sensor_down.shape[0] // seq_len * seq_len, :]
+            sensor_down = sensor_down.reshape(
+                sensor_down.shape[0] // seq_len, seq_len, sensor_down.shape[1]
+            )
             sensor_label = np.ones((sensor_down.shape[0], sensor_down.shape[1], 1))
-            sensor_label = np.concatenate([sensor_label * label_act, sensor_label * label_u], 2)
+            sensor_label = np.concatenate(
+                [sensor_label * label_act, sensor_label * label_u], 2
+            )
             data.append(sensor_down)
             label.append(sensor_label)
         else:
 
-            n+=1
-            
+            n += 1
 
     return data, label
 
@@ -100,24 +102,27 @@ def preprocess(path, path_save, version, target_window=50, seq_len=20):
         label.append(label_acc[i][:len_min, :, :])
     data = np.concatenate(data, 0)
     label = np.concatenate(label, 0)
-    print('All data processed. Size: %d' % (data.shape[0]))
-    np.save(os.path.join(path_save, 'data_' + version + '.npy'), np.array(data))
-    np.save(os.path.join(path_save, 'label_' + version + '.npy'), np.array(label))
+    print("All data processed. Size: %d" % (data.shape[0]))
+
+    os.makedirs(path_save, exist_ok=True)
+
+    np.save(os.path.join(path_save, "data_" + version + ".npy"), np.array(data))
+    np.save(os.path.join(path_save, "label_" + version + ".npy"), np.array(label))
     return data, label
 
 
-
-
-parser = argparse.ArgumentParser()
-parser.add_argument(
-        '--data_folder',
+if __name__ == "__main__":
+    print("Processing input and generating BERT embeddings")
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--data_folder",
         type=str,
         required=True,
-       )
-   
-args = parser.parse_args()
+    )
 
-path_save = r'motion'
-version = r'20_120'
+    args = parser.parse_args()
 
-data, label = preprocess(args.data_folder, path_save, version, seq_len=120)
+    path_save = f"{'/'.join(os.path.realpath(__file__).split('/')[:-1])}/motion"
+    version = r"20_120"
+
+    data, label = preprocess(args.data_folder, path_save, version, seq_len=120)
