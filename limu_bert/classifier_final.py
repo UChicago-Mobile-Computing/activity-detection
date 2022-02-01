@@ -92,7 +92,7 @@ def classify_embeddings(
             for label in output_labels:
                 out_file.write(label + "\n")
 
-        print("Saved output as predictions_limu_bert.txt")
+        print("Saved output as: ", args.output_predictions)
 
         return ""
 
