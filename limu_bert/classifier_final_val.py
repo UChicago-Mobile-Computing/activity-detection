@@ -10,7 +10,7 @@ import os
 import numpy as np
 import torch
 import torch.nn as nn
-from sklearn.metrics import precision_score
+from sklearn.metrics import precision_score, confusion_matrix
 from torch.utils.data import DataLoader
 from sklearn.metrics.pairwise import cosine_similarity
 from scipy import stats
@@ -33,10 +33,14 @@ def stat_acc_precision(label, results_estimated):
     # results_estimated = np.concatenate(results_estimated, 0)
     label_estimated = np.argmax(results_estimated, 1)
     precision = precision_score(label, label_estimated, average = None)
-    acc = accuracy_score(label, label_estimated)
-    print("Acc is :", acc, "and Precision for the labels : DWS , UPS, SIT, STD, WLK, JOG is : ", precision)
-    return acc, precision
 
+    cm = confusion_matrix(label, label_estimated)
+    cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+    acc = cm.diagonal()
+
+    print("Acc is :", acc, " for the labels DWS , UPS, SIT, STD, WLK, JOG ")
+    print("Precision is :" ,precision,  " for the labels DWS , UPS, SIT, STD, WLK, JOG ")
+    return ""
 
 
 
