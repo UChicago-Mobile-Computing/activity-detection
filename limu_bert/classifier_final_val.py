@@ -39,7 +39,6 @@ def stat_acc_precision(label, results_estimated):
     acc = cm.diagonal()
     overall_precision = precision_score(label, label_estimated, average = 'macro')
     overall_acc = accuracy_score(label, label_estimated)
-    acc = accuracy_score(label, label_estimated)
     print("Overall accuracy is: ", overall_acc)
     print("Overall precision is: ", overall_precision)
     print("Acc is :", acc, " for the labels DWS , UPS, SIT, STD, WLK, JOG ")
