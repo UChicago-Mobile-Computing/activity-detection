@@ -10,7 +10,7 @@ import os
 import numpy as np
 import torch
 import torch.nn as nn
-from sklearn.metrics import precision_score, confusion_matrix, accuracy_score
+from sklearn.metrics import precision_score, confusion_matrix, accuracy_score, classification_report    
 from torch.utils.data import DataLoader
 from sklearn.metrics.pairwise import cosine_similarity
 from scipy import stats
@@ -39,10 +39,9 @@ def stat_acc_precision(label, results_estimated):
     acc = cm.diagonal()
     overall_precision = precision_score(label, label_estimated, average = 'macro')
     overall_acc = accuracy_score(label, label_estimated)
+    print(classification_report(label, label_estimated, target_names="DWS, UPS, SIT, STD, WLK, JOG".split(", "), digits=3))
     print("Overall accuracy is: ", overall_acc)
-    print("Overall precision is: ", overall_precision)
-    print("Acc is :", acc, " for the labels DWS , UPS, SIT, STD, WLK, JOG ")
-    print("Precision is :" ,precision,  " for the labels DWS , UPS, SIT, STD, WLK, JOG ")
+    print("Class-level accuracy is:", acc, "for the labels DWS, UPS, SIT, STD, WLK, JOG")
     return ""
 
 
