@@ -46,9 +46,6 @@ def stat_acc_precision(label, results_estimated):
     return ""
 
 
-
-
-
 def classify_embeddings(
     args,
     data,
@@ -101,20 +98,6 @@ def classify_embeddings(
         logits = model(inputs, False)
         return logits, label
 
-    def func_evaluate(label, predicts):
-        final_preds = np.argmax(predicts.cpu().numpy(), 1)
-        final_preds = final_preds.tolist()
-        act_dict = {0: "DWS", 1: "UPS", 2: "SIT", 3: "STD", 4: "WLK", 5: "JOG"}
-
-        output_labels = [act_dict[el] for el in final_preds]
-
-        with open(args.output_predictions, "w") as out_file:
-            for label in output_labels:
-                out_file.write(label + "\n")
-
-        print("Saved output : ", args.output_predictions)
-
-        return ""
 
     def func_evaluate(label, predicts):
         stat = stat_acc_precision(label.cpu().numpy(), predicts.cpu().numpy())
