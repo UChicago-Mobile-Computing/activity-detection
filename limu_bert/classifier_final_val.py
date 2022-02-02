@@ -32,10 +32,12 @@ def stat_acc_precision(label, results_estimated):
     # label = np.concatenate(label, 0)
     # results_estimated = np.concatenate(results_estimated, 0)
     label_estimated = np.argmax(results_estimated, 1)
-    precision = precision_score(label, label_estimated, average='macro')
-    acc = np.sum(label == label_estimated) / label.size
-    print("Acc is :", acc, "and Precision is: ", precision)
+    precision = precision_score(label, label_estimated, average = None)
+    acc = accuracy_score(label, label_estimated)
+    print("Acc is :", acc, "and Precision for the labels : DWS , UPS, SIT, STD, WLK, JOG is : ", precision)
     return acc, precision
+
+
 
 
 def classify_embeddings(
